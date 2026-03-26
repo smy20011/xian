@@ -78,6 +78,17 @@
       gap: 0.75rem;
     }
 
+    .group-label {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .group-total {
+      margin: 0.2rem 0 0;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
     .share-actions {
       display: flex;
       align-items: center;
@@ -185,132 +196,118 @@
   </style>
 </head>
 <body>
-  <div id="app">
-    <main class="container">
-      <header>
-        <h1>饺子馅调味计算器</h1>
-        <p class="description">这是一份来自 <code>main.py</code> 的命令行计算逻辑在浏览器中的复刻：输入肉类与其他食材的重量，按需调整调味料，即可实时获取需添加的配料。</p>
-      </header>
-
-      <section class="card">
-        <form>
-          <div class="ingredients">
-            <div class="ingredient-group">
-              <div class="group-header">
-                <div>
-                  <p class="group-label">肉类食材</p>
-                  <p class="group-total">总量：<span>{{ formatWeight(meatTotal) }}</span> 克</p>
-                </div>
-                <button type="button" class="ghost-button" @click="addIngredient('meat')">+ 添加肉类</button>
-              </div>
-              <div class="ingredient-rows">
-                <div class="ingredient-row" v-for="(item, index) in groups.meat" :key="`meat-${index}`">
-                  <input type="text" v-model="item.name" placeholder="食材名称" />
-                  <input type="number" v-model="item.weight" min="0" step="1" placeholder="重量（克）" />
-                  <button type="button" class="remove-row" @click="removeIngredient('meat', index)">移除</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="ingredient-group">
-              <div class="group-header">
-                <div>
-                  <p class="group-label">其他食材</p>
-                  <p class="group-total">总量：<span>{{ formatWeight(otherTotal) }}</span> 克</p>
-                </div>
-                <button type="button" class="ghost-button" @click="addIngredient('other')">+ 添加食材</button>
-              </div>
-              <div class="ingredient-rows">
-                <div class="ingredient-row" v-for="(item, index) in groups.other" :key="`other-${index}`">
-                  <input type="text" v-model="item.name" placeholder="食材名称" />
-                  <input type="number" v-model="item.weight" min="0" step="1" placeholder="重量（克）" />
-                  <button type="button" class="remove-row" @click="removeIngredient('other', index)">移除</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <p class="hint">请按食材逐项输入，系统会自动汇总总重量。</p>
-
-          <div class="grid single">
-            <label class="field">
-              <span>总体含盐率（%）</span>
-              <input type="number" v-model.number="saltRatio" min="0" step="0.1" placeholder="默认 1.5" />
-              <span class="hint">默认值：1.5%</span>
-            </label>
-          </div>
-
-          <div class="grid">
-            <label class="field">
-              <span>可选：酱油重量（克）</span>
-              <input type="number" v-model="overrideInputs.soyWeight" min="0" step="1" placeholder="自动计算" />
-              <span class="hint">建议：<span>{{ formatSuggestion(result.defaults.soyWeight) }}</span> 克</span>
-            </label>
-
-            <label class="field">
-              <span>可选：蚝油重量（克）</span>
-              <input type="number" v-model="overrideInputs.oysterWeight" min="0" step="1" placeholder="自动计算" />
-              <span class="hint">建议：<span>{{ formatSuggestion(result.defaults.oysterWeight) }}</span> 克</span>
-            </label>
-
-            <label class="field">
-              <span>可选：味精重量（克）</span>
-              <input type="number" v-model="overrideInputs.msgWeight" min="0" step="1" placeholder="自动计算" />
-              <span class="hint">建议：<span>{{ formatSuggestion(result.defaults.msgWeight) }}</span> 克</span>
-            </label>
-
-            <label class="field">
-              <span>可选：食盐重量（克）</span>
-              <input type="number" v-model="overrideInputs.saltWeight" min="0" step="1" placeholder="自动计算" />
-              <span class="hint">建议：<span>{{ formatSuggestion(result.defaults.saltWeight) }}</span> 克</span>
-            </label>
-          </div>
-        </form>
-      </section>
-
-      <section class="card results">
-        <div class="group-header">
-          <h2>计算结果</h2>
-          <div class="share-actions">
-            <button type="button" class="ghost-button" @click="copyShareLink">复制配方链接</button>
-            <span class="hint" v-if="shareMessage">{{ shareMessage }}</span>
-          </div>
-        </div>
-        <p class="muted" v-if="!ready">请输入重量信息，添加量会自动刷新。</p>
-        <div v-else>
-          <dl>
-            <div>
-              <dt>需加清水</dt>
-              <dd><span>{{ formatWeight(result.waterWeight) }}</span> 克</dd>
-            </div>
-            <div>
-              <dt>需加食用油</dt>
-              <dd><span>{{ formatWeight(result.oilWeight) }}</span> 克</dd>
-            </div>
-            <div>
-              <dt>酱油</dt>
-              <dd><span>{{ formatWeight(result.soyWeight) }}</span> 克</dd>
-            </div>
-            <div>
-              <dt>蚝油</dt>
-              <dd><span>{{ formatWeight(result.oysterWeight) }}</span> 克</dd>
-            </div>
-            <div>
-              <dt>味精</dt>
-              <dd><span>{{ formatWeight(result.msgWeight) }}</span> 克</dd>
-            </div>
-            <div>
-              <dt>食盐</dt>
-              <dd><span>{{ formatWeight(result.saltWeight) }}</span> 克</dd>
-            </div>
-          </dl>
-        </div>
-      </section>
-    </main>
-  </div>
+  <div id="app"></div>
 
   <script type="module">
     import { createApp } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+
+    const template = `
+      <main class="container">
+        <header>
+          <h1>饺子馅调味计算器</h1>
+          <p class="description">这是一份来自 <code>main.py</code> 的命令行计算逻辑在浏览器中的复刻：输入肉类与其他食材的重量，按需调整调味料，即可实时获取需添加的配料。</p>
+        </header>
+
+        <section class="card">
+          <form>
+            <div class="ingredients">
+              <ingredient-group
+                label="肉类食材"
+                :total-text="formatWeight(meatTotal)"
+                add-label="+ 添加肉类"
+                :items="groups.meat"
+                @add="addIngredient('meat')"
+                @remove="removeIngredient('meat', $event)"
+              ></ingredient-group>
+
+              <ingredient-group
+                label="其他食材"
+                :total-text="formatWeight(otherTotal)"
+                add-label="+ 添加食材"
+                :items="groups.other"
+                @add="addIngredient('other')"
+                @remove="removeIngredient('other', $event)"
+              ></ingredient-group>
+            </div>
+
+            <p class="hint">请按食材逐项输入，系统会自动汇总总重量。</p>
+
+            <div class="grid single">
+              <label class="field">
+                <span>总体含盐率（%）</span>
+                <input type="number" v-model.number="saltRatio" min="0" step="0.1" placeholder="默认 1.5" />
+                <span class="hint">默认值：1.5%</span>
+              </label>
+            </div>
+
+            <div class="grid">
+              <seasoning-input
+                label="可选：酱油重量（克）"
+                v-model="overrideInputs.soyWeight"
+                :suggestion="formatSuggestion(result.defaults.soyWeight)"
+              ></seasoning-input>
+
+              <seasoning-input
+                label="可选：蚝油重量（克）"
+                v-model="overrideInputs.oysterWeight"
+                :suggestion="formatSuggestion(result.defaults.oysterWeight)"
+              ></seasoning-input>
+
+              <seasoning-input
+                label="可选：味精重量（克）"
+                v-model="overrideInputs.msgWeight"
+                :suggestion="formatSuggestion(result.defaults.msgWeight)"
+              ></seasoning-input>
+
+              <seasoning-input
+                label="可选：食盐重量（克）"
+                v-model="overrideInputs.saltWeight"
+                :suggestion="formatSuggestion(result.defaults.saltWeight)"
+              ></seasoning-input>
+            </div>
+          </form>
+        </section>
+
+        <section class="card results">
+          <div class="group-header">
+            <h2>计算结果</h2>
+            <div class="share-actions">
+              <button type="button" class="ghost-button" @click="copyShareLink">复制配方链接</button>
+              <span class="hint" v-if="shareMessage">{{ shareMessage }}</span>
+            </div>
+          </div>
+          <p class="muted" v-if="!ready">请输入重量信息，添加量会自动刷新。</p>
+          <div v-else>
+            <dl>
+              <div>
+                <dt>需加清水</dt>
+                <dd><span>{{ formatWeight(result.waterWeight) }}</span> 克</dd>
+              </div>
+              <div>
+                <dt>需加食用油</dt>
+                <dd><span>{{ formatWeight(result.oilWeight) }}</span> 克</dd>
+              </div>
+              <div>
+                <dt>酱油</dt>
+                <dd><span>{{ formatWeight(result.soyWeight) }}</span> 克</dd>
+              </div>
+              <div>
+                <dt>蚝油</dt>
+                <dd><span>{{ formatWeight(result.oysterWeight) }}</span> 克</dd>
+              </div>
+              <div>
+                <dt>味精</dt>
+                <dd><span>{{ formatWeight(result.msgWeight) }}</span> 克</dd>
+              </div>
+              <div>
+                <dt>食盐</dt>
+                <dd><span>{{ formatWeight(result.saltWeight) }}</span> 克</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+      </main>
+    `;
 
     const DEFAULT_SALT_RATIO = 1.5;
 
@@ -412,7 +409,8 @@
 
     const initialState = getInitialState();
 
-    createApp({
+    const app = createApp({
+      template,
       data() {
         return {
           saltRatio: initialState.saltRatio,
@@ -534,7 +532,90 @@
       mounted() {
         this.updateShareState();
       },
-    }).mount('#app');
+    });
+
+    app.component('ingredient-group', {
+      props: {
+        label: {
+          type: String,
+          required: true,
+        },
+        totalText: {
+          type: String,
+          required: true,
+        },
+        addLabel: {
+          type: String,
+          required: true,
+        },
+        items: {
+          type: Array,
+          default: () => [],
+        },
+      },
+      emits: ['add', 'remove'],
+      template: `
+        <div class="ingredient-group">
+          <div class="group-header">
+            <div>
+              <p class="group-label">{{ label }}</p>
+              <p class="group-total">总量：<span>{{ totalText }}</span> 克</p>
+            </div>
+            <button type="button" class="ghost-button" @click="$emit('add')">{{ addLabel }}</button>
+          </div>
+          <div class="ingredient-rows">
+            <div class="ingredient-row" v-for="(item, index) in items" :key="index">
+              <input type="text" v-model="item.name" placeholder="食材名称" />
+              <input type="number" v-model="item.weight" min="0" step="1" placeholder="重量（克）" />
+              <button type="button" class="remove-row" @click="$emit('remove', index)">移除</button>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+
+    app.component('seasoning-input', {
+      props: {
+        label: {
+          type: String,
+          required: true,
+        },
+        modelValue: {
+          type: [String, Number],
+          default: '',
+        },
+        suggestion: {
+          type: String,
+          default: '—',
+        },
+        placeholder: {
+          type: String,
+          default: '自动计算',
+        },
+      },
+      emits: ['update:modelValue'],
+      methods: {
+        updateValue(event) {
+          this.$emit('update:modelValue', event.target.value);
+        },
+      },
+      template: `
+        <label class="field">
+          <span>{{ label }}</span>
+          <input
+            type="number"
+            :value="modelValue"
+            min="0"
+            step="1"
+            :placeholder="placeholder"
+            @input="updateValue"
+          />
+          <span class="hint">建议：<span>{{ suggestion }}</span> 克</span>
+        </label>
+      `,
+    });
+
+    app.mount('#app');
   </script>
 </body>
 </html>
