@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>饺子馅调味计算器</title>
+  <style>
+    :root {
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      line-height: 1.5;
+      color: #0f172a;
+      background: #f1f5f9;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 2rem 1rem 3rem;
+      background: linear-gradient(180deg, #f8fafc, #e2e8f0);
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 18px;
+      box-shadow: 0 12px 30px -15px rgba(15, 23, 42, 0.5);
+    }
+
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+    }
+
+    p {
+      margin: 0;
+      color: #475569;
+    }
+
+    form,
+    .ingredient-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .ingredients {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .ingredient-group {
+      background: #f8fafc;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .group-header {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .ingredient-row {
+      display: grid;
+      grid-template-columns: 1fr minmax(110px, 140px) auto;
+      gap: 0.5rem;
+    }
+
+    @media (max-width: 600px) {
+      .ingredient-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      padding: 0.65rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid #cbd5f5;
+      font-size: 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus {
+      border-color: #6366f1;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .grid.single {
+      grid-template-columns: minmax(220px, 1fr);
+    }
+
+    label.field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-weight: 600;
+    }
+
+    .hint {
+      font-weight: 400;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    .ghost-button,
+    .remove-row {
+      border-radius: 999px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+    }
+
+    .ghost-button {
+      border: 1px dashed #94a3b8;
+      padding: 0.45rem 1.2rem;
+      background: transparent;
+      color: #475569;
+    }
+
+    .ghost-button:hover {
+      border-color: #475569;
+      color: #0f172a;
+    }
+
+    .remove-row {
+      padding: 0.45rem 0.9rem;
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .results h2 {
+      margin: 0 0 0.5rem;
+    }
+
+    dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem 1.5rem;
+    }
+
+    dt {
+      font-weight: 600;
+    }
+
+    dd {
+      margin: 0.15rem 0 0;
+      font-size: 1.25rem;
+      color: #1e293b;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <main class="container">
+      <header>
+        <h1>饺子馅调味计算器</h1>
+        <p class="description">这是一份来自 <code>main.py</code> 的命令行计算逻辑在浏览器中的复刻：输入肉类与其他食材的重量，按需调整调味料，即可实时获取需添加的配料。</p>
+      </header>
+
+      <section class="card">
+        <form>
+          <div class="ingredients">
+            <div class="ingredient-group">
+              <div class="group-header">
+                <div>
+                  <p class="group-label">肉类食材</p>
+                  <p class="group-total">总量：<span>{{ formatWeight(meatTotal) }}</span> 克</p>
+                </div>
+                <button type="button" class="ghost-button" @click="addIngredient('meat')">+ 添加肉类</button>
+              </div>
+              <div class="ingredient-rows">
+                <div class="ingredient-row" v-for="(item, index) in groups.meat" :key="`meat-${index}`">
+                  <input type="text" v-model="item.name" placeholder="食材名称" />
+                  <input type="number" v-model="item.weight" min="0" step="1" placeholder="重量（克）" />
+                  <button type="button" class="remove-row" @click="removeIngredient('meat', index)">移除</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="ingredient-group">
+              <div class="group-header">
+                <div>
+                  <p class="group-label">其他食材</p>
+                  <p class="group-total">总量：<span>{{ formatWeight(otherTotal) }}</span> 克</p>
+                </div>
+                <button type="button" class="ghost-button" @click="addIngredient('other')">+ 添加食材</button>
+              </div>
+              <div class="ingredient-rows">
+                <div class="ingredient-row" v-for="(item, index) in groups.other" :key="`other-${index}`">
+                  <input type="text" v-model="item.name" placeholder="食材名称" />
+                  <input type="number" v-model="item.weight" min="0" step="1" placeholder="重量（克）" />
+                  <button type="button" class="remove-row" @click="removeIngredient('other', index)">移除</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="hint">请按食材逐项输入，系统会自动汇总总重量。</p>
+
+          <div class="grid single">
+            <label class="field">
+              <span>总体含盐率（%）</span>
+              <input type="number" v-model.number="saltRatio" min="0" step="0.1" placeholder="默认 1.5" />
+              <span class="hint">默认值：1.5%</span>
+            </label>
+          </div>
+
+          <div class="grid">
+            <label class="field">
+              <span>可选：酱油重量（克）</span>
+              <input type="number" v-model="overrideInputs.soyWeight" min="0" step="1" placeholder="自动计算" />
+              <span class="hint">建议：<span>{{ formatSuggestion(result.defaults.soyWeight) }}</span> 克</span>
+            </label>
+
+            <label class="field">
+              <span>可选：蚝油重量（克）</span>
+              <input type="number" v-model="overrideInputs.oysterWeight" min="0" step="1" placeholder="自动计算" />
+              <span class="hint">建议：<span>{{ formatSuggestion(result.defaults.oysterWeight) }}</span> 克</span>
+            </label>
+
+            <label class="field">
+              <span>可选：味精重量（克）</span>
+              <input type="number" v-model="overrideInputs.msgWeight" min="0" step="1" placeholder="自动计算" />
+              <span class="hint">建议：<span>{{ formatSuggestion(result.defaults.msgWeight) }}</span> 克</span>
+            </label>
+
+            <label class="field">
+              <span>可选：食盐重量（克）</span>
+              <input type="number" v-model="overrideInputs.saltWeight" min="0" step="1" placeholder="自动计算" />
+              <span class="hint">建议：<span>{{ formatSuggestion(result.defaults.saltWeight) }}</span> 克</span>
+            </label>
+          </div>
+        </form>
+      </section>
+
+      <section class="card results">
+        <h2>计算结果</h2>
+        <p class="muted" v-if="!ready">请输入重量信息，添加量会自动刷新。</p>
+        <div v-else>
+          <dl>
+            <div>
+              <dt>需加清水</dt>
+              <dd><span>{{ formatWeight(result.waterWeight) }}</span> 克</dd>
+            </div>
+            <div>
+              <dt>需加食用油</dt>
+              <dd><span>{{ formatWeight(result.oilWeight) }}</span> 克</dd>
+            </div>
+            <div>
+              <dt>酱油</dt>
+              <dd><span>{{ formatWeight(result.soyWeight) }}</span> 克</dd>
+            </div>
+            <div>
+              <dt>蚝油</dt>
+              <dd><span>{{ formatWeight(result.oysterWeight) }}</span> 克</dd>
+            </div>
+            <div>
+              <dt>味精</dt>
+              <dd><span>{{ formatWeight(result.msgWeight) }}</span> 克</dd>
+            </div>
+            <div>
+              <dt>食盐</dt>
+              <dd><span>{{ formatWeight(result.saltWeight) }}</span> 克</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createApp } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+
+    const DEFAULT_SALT_RATIO = 1.5;
+
+    const toNumber = (value) => {
+      if (value === '' || value === null || value === undefined) return null;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    function compute(meatWeight, otherWeight, saltRatio, overrides) {
+      const meat = meatWeight ?? 0;
+      const other = otherWeight ?? 0;
+      const ratio = saltRatio ?? DEFAULT_SALT_RATIO;
+
+      const waterWeight = meat * 0.4;
+      const oilWeight = (meat + waterWeight + other) * 0.02;
+      const totalWeight = meat + waterWeight + other + oilWeight;
+      const totalSodium = totalWeight * ratio / 100 * 23 / 59;
+
+      const soyDefault = totalWeight * 0.02;
+      const oysterDefault = totalWeight * 0.02;
+      const msgDefault = totalWeight * 0.005;
+
+      const soyWeight = overrides.soyWeight ?? soyDefault;
+      const oysterWeight = overrides.oysterWeight ?? oysterDefault;
+      const msgWeight = overrides.msgWeight ?? msgDefault;
+
+      const saltDefault = (totalSodium - soyWeight * 0.06 - oysterWeight * 0.045 - msgWeight * 0.12) / 0.39;
+      const saltWeight = overrides.saltWeight ?? saltDefault;
+
+      return {
+        waterWeight,
+        oilWeight,
+        soyWeight,
+        oysterWeight,
+        msgWeight,
+        saltWeight,
+        defaults: {
+          soyWeight: soyDefault,
+          oysterWeight: oysterDefault,
+          msgWeight: msgDefault,
+          saltWeight: saltDefault,
+        },
+      };
+    }
+
+    createApp({
+      data() {
+        return {
+          saltRatio: DEFAULT_SALT_RATIO,
+          groups: {
+            meat: [
+              { name: '牛肉', weight: '' },
+              { name: '虾仁', weight: '' },
+            ],
+            other: [
+              { name: '蔬菜', weight: '' },
+            ],
+          },
+          overrideInputs: {
+            soyWeight: '',
+            oysterWeight: '',
+            msgWeight: '',
+            saltWeight: '',
+          },
+        };
+      },
+      computed: {
+        meatTotal() {
+          return this.groups.meat.reduce((sum, item) => sum + (toNumber(item.weight) ?? 0), 0);
+        },
+        otherTotal() {
+          return this.groups.other.reduce((sum, item) => sum + (toNumber(item.weight) ?? 0), 0);
+        },
+        overridesParsed() {
+          return {
+            soyWeight: toNumber(this.overrideInputs.soyWeight),
+            oysterWeight: toNumber(this.overrideInputs.oysterWeight),
+            msgWeight: toNumber(this.overrideInputs.msgWeight),
+            saltWeight: toNumber(this.overrideInputs.saltWeight),
+          };
+        },
+        result() {
+          return compute(this.meatTotal, this.otherTotal, this.saltRatio ?? DEFAULT_SALT_RATIO, this.overridesParsed);
+        },
+        ready() {
+          return this.meatTotal > 0;
+        },
+      },
+      methods: {
+        addIngredient(group) {
+          this.groups[group].push({ name: '', weight: '' });
+        },
+        removeIngredient(group, index) {
+          this.groups[group].splice(index, 1);
+        },
+        formatWeight(value) {
+          return Number.isFinite(value) ? value.toFixed(1) : '0.0';
+        },
+        formatSuggestion(value) {
+          return Number.isFinite(value) ? value.toFixed(1) : '—';
+        },
+      },
+    }).mount('#app');
+  </script>
+</body>
+</html>
