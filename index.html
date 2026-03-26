@@ -78,6 +78,13 @@
       gap: 0.75rem;
     }
 
+    .share-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
     .ingredient-row {
       display: grid;
       grid-template-columns: 1fr minmax(110px, 140px) auto;
@@ -262,7 +269,13 @@
       </section>
 
       <section class="card results">
-        <h2>计算结果</h2>
+        <div class="group-header">
+          <h2>计算结果</h2>
+          <div class="share-actions">
+            <button type="button" class="ghost-button" @click="copyShareLink">复制配方链接</button>
+            <span class="hint" v-if="shareMessage">{{ shareMessage }}</span>
+          </div>
+        </div>
         <p class="muted" v-if="!ready">请输入重量信息，添加量会自动刷新。</p>
         <div v-else>
           <dl>
@@ -307,6 +320,59 @@
       return Number.isFinite(parsed) ? parsed : null;
     };
 
+    const createDefaultState = () => ({
+      saltRatio: DEFAULT_SALT_RATIO,
+      groups: {
+        meat: [
+          { name: '牛肉', weight: '' },
+          { name: '虾仁', weight: '' },
+        ],
+        other: [
+          { name: '蔬菜', weight: '' },
+        ],
+      },
+      overrideInputs: {
+        soyWeight: '',
+        oysterWeight: '',
+        msgWeight: '',
+        saltWeight: '',
+      },
+    });
+
+    const cloneList = (list) => list.map((item) => ({ ...item }));
+
+    const parseListFromParams = (values, fallback) => {
+      if (!values || values.length === 0) return cloneList(fallback);
+      if (values.length === 1 && values[0] === '') return [];
+      return values.map((entry) => {
+        const [name = '', weight = ''] = entry.split('|');
+        return { name, weight };
+      });
+    };
+
+    const getInitialState = () => {
+      const fallback = createDefaultState();
+      const params = new URLSearchParams(window.location.search);
+      const saltRatioParam = toNumber(params.get('saltRatio'));
+      const soy = params.get('soyWeight');
+      const oyster = params.get('oysterWeight');
+      const msg = params.get('msgWeight');
+      const salt = params.get('saltWeight');
+      return {
+        saltRatio: saltRatioParam ?? fallback.saltRatio,
+        groups: {
+          meat: parseListFromParams(params.getAll('meat'), fallback.groups.meat),
+          other: parseListFromParams(params.getAll('other'), fallback.groups.other),
+        },
+        overrideInputs: {
+          soyWeight: soy ?? '',
+          oysterWeight: oyster ?? '',
+          msgWeight: msg ?? '',
+          saltWeight: salt ?? '',
+        },
+      };
+    };
+
     function compute(meatWeight, otherWeight, saltRatio, overrides) {
       const meat = meatWeight ?? 0;
       const other = otherWeight ?? 0;
@@ -344,25 +410,17 @@
       };
     }
 
+    const initialState = getInitialState();
+
     createApp({
       data() {
         return {
-          saltRatio: DEFAULT_SALT_RATIO,
-          groups: {
-            meat: [
-              { name: '牛肉', weight: '' },
-              { name: '虾仁', weight: '' },
-            ],
-            other: [
-              { name: '蔬菜', weight: '' },
-            ],
-          },
-          overrideInputs: {
-            soyWeight: '',
-            oysterWeight: '',
-            msgWeight: '',
-            saltWeight: '',
-          },
+          saltRatio: initialState.saltRatio,
+          groups: initialState.groups,
+          overrideInputs: initialState.overrideInputs,
+          shareUrl: window.location.href,
+          shareMessage: '',
+          shareMessageTimeout: null,
         };
       },
       computed: {
@@ -400,6 +458,81 @@
         formatSuggestion(value) {
           return Number.isFinite(value) ? value.toFixed(1) : '—';
         },
+        updateShareState() {
+          const url = new URL(window.location.href);
+          const params = new URLSearchParams();
+          const setListParams = (key, list) => {
+            if (list.length === 0) {
+              params.append(key, '');
+              return;
+            }
+            list.forEach((item) => {
+              const name = item.name || '';
+              const weight = item.weight ?? '';
+              params.append(key, `${name}|${weight}`);
+            });
+          };
+          params.set('saltRatio', typeof this.saltRatio === 'number' ? this.saltRatio : DEFAULT_SALT_RATIO);
+          setListParams('meat', this.groups.meat);
+          setListParams('other', this.groups.other);
+          Object.entries(this.overrideInputs).forEach(([key, value]) => {
+            if (value !== '' && value !== null && value !== undefined) {
+              params.set(key, value);
+            }
+          });
+          url.search = params.toString();
+          window.history.replaceState({}, '', url);
+          this.shareUrl = url.toString();
+        },
+        setShareMessage(message) {
+          this.shareMessage = message;
+          if (this.shareMessageTimeout) {
+            clearTimeout(this.shareMessageTimeout);
+          }
+          if (message) {
+            this.shareMessageTimeout = setTimeout(() => {
+              this.shareMessage = '';
+            }, 2000);
+          }
+        },
+        copyShareLink() {
+          const url = this.shareUrl || window.location.href;
+          if (navigator.clipboard?.writeText) {
+            navigator.clipboard
+              .writeText(url)
+              .then(() => this.setShareMessage('已复制链接'))
+              .catch(() => this.setShareMessage('复制失败，请手动复制'));
+            return;
+          }
+          const textarea = document.createElement('textarea');
+          textarea.value = url;
+          textarea.style.position = 'fixed';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+          try {
+            document.execCommand('copy');
+            this.setShareMessage('已复制链接');
+          } catch {
+            this.setShareMessage('复制失败，请手动复制');
+          }
+          document.body.removeChild(textarea);
+        },
+      },
+      watch: {
+        saltRatio: 'updateShareState',
+        groups: {
+          handler: 'updateShareState',
+          deep: true,
+        },
+        overrideInputs: {
+          handler: 'updateShareState',
+          deep: true,
+        },
+      },
+      mounted() {
+        this.updateShareState();
       },
     }).mount('#app');
   </script>
