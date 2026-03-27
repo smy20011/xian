@@ -28,7 +28,7 @@
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1rem;
     }
 
     .card {
@@ -100,12 +100,6 @@
       display: grid;
       grid-template-columns: 1fr minmax(110px, 140px) auto;
       gap: 0.5rem;
-    }
-
-    @media (max-width: 600px) {
-      .ingredient-row {
-        grid-template-columns: 1fr;
-      }
     }
 
     input[type="text"],
@@ -205,7 +199,6 @@
       <main class="container">
         <header>
           <h1>饺子馅调味计算器</h1>
-          <p class="description">这是一份来自 <code>main.py</code> 的命令行计算逻辑在浏览器中的复刻：输入肉类与其他食材的重量，按需调整调味料，即可实时获取需添加的配料。</p>
         </header>
 
         <section class="card">
